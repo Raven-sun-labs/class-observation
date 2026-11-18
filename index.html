@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Effectiveness Rating & Observation Matrix (CLASS Framework)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Merriweather for crisp rubric readability -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            rubric: {
+              header: '#d6d9df',
+              border: '#8c939e',
+              lowBg: '#fef2f2',
+              lowBorder: '#ef4444',
+              midBg: '#fffbeb',
+              midBorder: '#f59e0b',
+              highBg: '#ecfdf5',
+              highBorder: '#10b981'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+      color: #1f2937;
+    }
+
+    /* Classic Rubric Styling coupled with Interactive States */
+    .rubric-banner {
+      background-color: #d9dce2;
+      border: 2px solid #6b7280;
+    }
+
+    .rubric-col-header {
+      background-color: #d9dce2;
+      border-top: 2px solid #6b7280;
+      border-bottom: 2px solid #6b7280;
+    }
+
+    .rating-cell {
+      transition: all 0.18s ease-in-out;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .rating-cell:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .rating-selected-low {
+      background-color: #fef2f2 !important;
+      border-color: #dc2626 !important;
+      box-shadow: inset 0 0 0 2px #dc2626;
+    }
+
+    .rating-selected-mid {
+      background-color: #fffbeb !important;
+      border-color: #d97706 !important;
+      box-shadow: inset 0 0 0 2px #d97706;
+    }
+
+    .rating-selected-high {
+      background-color: #ecfdf5 !important;
+      border-color: #059669 !important;
+      box-shadow: inset 0 0 0 2px #059669;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Print optimization */
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-break-inside-avoid {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Navigation & Action Bar -->
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+          <i class="fa-solid fa-chalkboard-user"></i>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight flex items-center gap-2">
+            ECE-CTE Teacher Effectiveness Rating System
+            <span class="hidden sm:inline-block text-xs font-medium bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2.5 py-0.5 rounded-full">
+              10 Broad Areas Matrix
+            </span>
+          </h1>
+          <p class="text-xs text-slate-300">Classroom Assessment Scoring Matrix & Student Goal-Setting Portfolio</p>
+        </div>
+      </div>
+
+      <!-- Saved Observations & View Switcher -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Student/Teacher Profile Selector -->
+        <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
+          <span class="text-xs text-slate-400 px-2 hidden md:inline">Observation:</span>
+          <select id="profileSelector" onchange="switchObservationProfile(this.value)" class="bg-slate-900 text-white text-xs sm:text-sm rounded-md px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-indigo-500">
+          </select>
+          <button onclick="createNewObservationProfile()" title="New Student/Teacher Observation" class="ml-1 px-2.5 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">New</span>
+          </button>
+          <button onclick="deleteCurrentProfile()" title="Delete Current Observation" class="ml-1 px-2 py-1.5 text-xs bg-slate-700 hover:bg-red-600 text-slate-200 hover:text-white rounded-md transition">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+
+        <!-- View Mode Tabs -->
+        <div class="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+          <button id="tabBtnMatrix" onclick="setMainView('matrix')" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold bg-indigo-600 text-white transition flex items-center gap-1.5">
+            <i class="fa-solid fa-table-cells"></i> Scoring Matrix
+          </button>
+          <button id="tabBtnReport" onclick="setMainView('report')" class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5">
+            <i class="fa-solid fa-file-signature"></i> Summary & Goal Sheet
+          </button>
+        </div>
+
+        <!-- Edit Rubric Text Modal Trigger -->
+        <button onclick="openRubricEditorModal()" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 transition flex items-center gap-1.5" title="Edit or paste verbatim rubric descriptors for any of the 10 areas">
+          <i class="fa-solid fa-pen-to-square"></i> <span class="hidden md:inline">Customize Matrix Text</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Teacher & Observation Metadata Header Card -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 mb-6 no-print">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Student / Teacher Name
+          </label>
+          <input id="metaTeacherName" type="text" placeholder="e.g., Jordan Taylor (ECE Senior)" oninput="updateMetadata()"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-medium text-slate-800" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Observer / Instructor
+          </label>
+          <input id="metaObserverName" type="text" placeholder="e.g., Ms. Anderson" oninput="updateMetadata()"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Observation Date
+          </label>
+          <input id="metaDate" type="date" oninput="updateMetadata()"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Classroom / Age Group
+          </label>
+          <input id="metaClassroom" type="text" placeholder="e.g., Pre-K Room B / Center Time" oninput="updateMetadata()"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800" />
+        </div>
+
+        <!-- Quick Overall Score Snapshot -->
+        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-medium text-slate-500">Overall Mean (1–7)</div>
+            <div class="flex items-baseline gap-2 mt-0.5">
+              <span id="overallAverageScore" class="text-2xl font-extrabold text-indigo-700">—</span>
+              <span id="overallBandBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">Not Rated</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-slate-500">Areas Rated</div>
+            <div id="areasCompletedCount" class="text-sm font-bold text-slate-800 mt-0.5">0 / 10</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: SCORING MATRIX VIEW -->
+    <div id="viewMatrix" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Sidebar: 10 Broad Areas Navigation -->
+      <aside class="lg:col-span-3 space-y-4 no-print">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="bg-slate-800 text-white px-4 py-3 flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold tracking-wide uppercase">10 Broad Areas</h2>
+              <p class="text-[11px] text-slate-300">Select an area to rate</p>
+            </div>
+            <span class="text-xs bg-slate-700 px-2 py-0.5 rounded text-slate-200 font-medium">CLASS</span>
+          </div>
+
+          <!-- Domain Grouped Navigation List -->
+          <div id="broadAreasNav" class="divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- Quick Legend & Instructions -->
+        <div class="bg-indigo-50/80 rounded-2xl p-4 border border-indigo-100 text-xs text-slate-700 space-y-2">
+          <div class="font-bold text-indigo-950 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-info text-indigo-600"></i> How to Score This Matrix
+          </div>
+          <p class="leading-relaxed">
+            1. Click directly on any <strong>Low (1,2)</strong>, <strong>Mid (3,4,5)</strong>, or <strong>High (6,7)</strong> descriptor cell to select that rating judgment for each category of skill.
+          </p>
+          <p class="leading-relaxed">
+            2. Fine-tune the exact numeric score (<strong>1–7</strong>) using the number buttons inside the selected cell.
+          </p>
+          <p class="leading-relaxed">
+            3. Add specific classroom observations or student goal notes below the matrix.
+          </p>
+        </div>
+      </aside>
+
+      <!-- Right Main Area: Active Broad Area Matrix & Feedback -->
+      <section class="lg:col-span-9 space-y-6">
+
+        <!-- Active Area Controls & Summary Strip -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span id="activeAreaNumberBadge" class="w-9 h-9 rounded-xl bg-slate-800 text-white font-bold text-sm flex items-center justify-center">
+              3
+            </span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="activeAreaDomainBadge" class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-100 text-rose-800">
+                  Emotional Support
+                </span>
+                <span id="activeAreaVerbatimTag" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                  <i class="fa-solid fa-check-circle"></i> Verbatim Matrix Loaded
+                </span>
+              </div>
+              <h2 id="activeAreaTitleTop" class="text-xl font-extrabold text-slate-900 mt-0.5">
+                Teacher Sensitivity
+              </h2>
+            </div>
+          </div>
+
+          <!-- Active Area Calculated Score & Clear Button -->
+          <div class="flex items-center gap-3">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 flex items-center gap-3">
+              <div>
+                <div class="text-[11px] font-semibold uppercase text-slate-500">Area Score</div>
+                <div class="flex items-center gap-1.5">
+                  <span id="activeAreaAvgScore" class="text-lg font-extrabold text-slate-900">—</span>
+                  <span id="activeAreaBandLabel" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">Unrated</span>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="openRubricEditorModal()" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition flex items-center gap-1.5" title="Edit categories or Low/Mid/High text for this area">
+              <i class="fa-solid fa-sliders"></i> Edit Text
+            </button>
+            <button onclick="clearCurrentAreaRatings()" class="px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition flex items-center gap-1.5" title="Reset ratings for this broad area">
+              <i class="fa-solid fa-rotate-left"></i> Reset Area
+            </button>
+          </div>
+        </div>
+
+        <!-- THE AUTHENTIC SCORING MATRIX (Preserving the exact layout and text from image) -->
+        <div class="bg-white rounded-2xl shadow-md border border-slate-300 p-4 sm:p-6 overflow-x-auto">
+
+          <!-- Broad Area Top Gray Banner (Matches uploaded rubric visual style) -->
+          <div class="rubric-banner py-3 px-4 text-center mb-4 rounded-sm">
+            <h3 id="matrixBannerTitle" class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Teacher Sensitivity
+            </h3>
+          </div>
+
+          <!-- Matrix Grid Table -->
+          <div class="min-w-[760px]">
+            <!-- Column Headers Row -->
+            <div class="grid grid-cols-12 gap-0 mb-2">
+              <div class="col-span-3 pr-4 flex items-end pb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Categories of Skill &amp; Indicators
+                </span>
+              </div>
+              <div class="col-span-9 grid grid-cols-3 rubric-col-header text-center py-2">
+                <div class="font-bold text-base sm:text-lg text-slate-900 border-r border-slate-400/50">
+                  Low (1,2)
+                </div>
+                <div class="font-bold text-base sm:text-lg text-slate-900 border-r border-slate-400/50">
+                  Mid (3,4,5)
+                </div>
+                <div class="font-bold text-base sm:text-lg text-slate-900">
+                  High (6,7)
+                </div>
+              </div>
+            </div>
+
+            <!-- Matrix Rows Container -->
+            <div id="matrixRowsContainer" class="divide-y divide-slate-200">
+              <!-- Populated dynamically with exact verbatim text -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Observer Feedback & Student Goal-Setting Integration for Active Broad Area -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-comments text-indigo-600"></i>
+                Observer Feedback &amp; ECE-CTE Student Reflection Link (<span id="feedbackAreaName">Teacher Sensitivity</span>)
+              </h3>
+              <p class="text-xs text-slate-500">
+                Record concrete classroom examples observed during this session to help the student form their strengths-based or growth goals.
+              </p>
+            </div>
+            <button onclick="insertSelectedDescriptorsIntoFeedback()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Insert Selected Rubric Text
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Instructor / Observer Feedback Notes (CLASS Connection)
+              </label>
+              <textarea id="areaObserverNotes" rows="4" oninput="saveAreaNotes()"
+                placeholder="Write specific observations for this dimension (e.g., 'During center time, you noticed right away when Leo was frustrated with the puzzle and offered calm, individualized support...')"
+                class="w-full p-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none leading-relaxed"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Student Reflection / Action Goal for This Area
+              </label>
+              <textarea id="areaStudentGoal" rows="4" oninput="saveAreaNotes()"
+                placeholder="Student combines their self-reflection + your CLASS feedback into an actionable goal statement..."
+                class="w-full p-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none leading-relaxed"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prev / Next Broad Area Bottom Navigation -->
+        <div class="flex items-center justify-between pt-2 no-print">
+          <button id="btnPrevArea" onclick="navigateArea(-1)" class="px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-sm shadow-sm transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Previous Area
+          </button>
+          <button onclick="setMainView('report')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition flex items-center gap-2">
+            View Full Summary &amp; Goal Assignment <i class="fa-solid fa-file-lines"></i>
+          </button>
+          <button id="btnNextArea" onclick="navigateArea(1)" class="px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-sm shadow-sm transition flex items-center gap-2">
+            Next Area <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- VIEW 2: SUMMARY REPORT & ECE-CTE GOAL SETTING SHEET -->
+    <div id="viewReport" class="hidden space-y-6">
+
+      <!-- Report Action Bar (Hidden when printing) -->
+      <div class="bg-indigo-900 text-white rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 no-print shadow-md">
+        <div>
+          <h2 class="text-lg font-bold flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-check text-indigo-300"></i>
+            Teacher Effectiveness Summary &amp; ECE-CTE Goal-Setting Portfolio
+          </h2>
+          <p class="text-xs text-indigo-200 mt-0.5">
+            Displays all rated categories, exact verbatim rubric descriptors, observer CLASS feedback, and the student's Strengths &amp; Growth Goal assignment.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="copyReportTextToClipboard()" class="px-3.5 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 border border-indigo-500">
+            <i class="fa-regular fa-copy"></i> Copy Plain Text Summary
+          </button>
+          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-white text-indigo-950 hover:bg-indigo-50 text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-print"></i> Print / Save as PDF
+          </button>
+          <button onclick="setMainView('matrix')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition">
+            Back to Matrix
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Document Sheet -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-8">
+
+        <!-- Document Header -->
+        <div class="border-b-2 border-slate-800 pb-5 flex flex-wrap justify-between items-start gap-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-widest text-indigo-600">
+              Early Childhood Education (ECE-CTE) • CLASS Observation &amp; Reflection
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1" id="reportHeaderTeacher">
+              Student / Teacher Evaluation Report
+            </h2>
+            <p class="text-sm text-slate-600 mt-1" id="reportHeaderSub">
+              Classroom Assessment Scoring System — 10 Broad Areas of Effective Teaching
+            </p>
+          </div>
+          <div class="bg-slate-100 rounded-xl p-3.5 border border-slate-300 text-right min-w-[180px]">
+            <div class="text-xs font-bold uppercase text-slate-500">Overall Rating Mean</div>
+            <div class="text-2xl font-black text-slate-900 mt-0.5" id="reportOverallScore">—</div>
+            <div class="text-xs font-semibold text-indigo-700" id="reportOverallBand">No ratings yet</div>
+          </div>
+        </div>
+
+        <!-- Overview Grid of All 10 Broad Areas -->
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">
+            10 Broad Areas of Effective Teaching — Score Overview
+          </h3>
+          <div id="reportTenAreasGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Detailed Breakdown of Rated Broad Areas (Includes Exact Verbatim Descriptors) -->
+        <div class="space-y-6">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-2">
+            Detailed Rubric Judgments &amp; Verbatim Descriptors
+          </h3>
+          <div id="reportDetailedAreasContainer" class="space-y-6">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- ECE-CTE High School Senior Goal Setting Assignment Section -->
+        <div class="border-t-2 border-slate-800 pt-6 print-break-inside-avoid">
+          <div class="bg-indigo-50/60 rounded-2xl border border-indigo-200 p-5 sm:p-6 space-y-6">
+            <div class="border-b border-indigo-200 pb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+                ECE-CTE Senior Assignment
+              </span>
+              <h3 class="text-xl font-extrabold text-slate-900 mt-1">
+                Goal Setting: ECE Reflections &amp; CLASS Feedback
+              </h3>
+              <p class="text-xs sm:text-sm text-slate-600 mt-1">
+                <strong>Instructions:</strong> You have reflected on your strengths, and your instructor has given you feedback based on the CLASS tool above. Now, turn those reflections into two specific goals for your teaching practice.
+              </p>
+            </div>
+
+            <!-- Part 1: Building on Your Strengths -->
+            <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 space-y-4">
+              <h4 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+                Part 1: Building on Your Strengths
+              </h4>
+              <p class="text-xs text-slate-600">
+                Look at your recent reflection about what energizes you and a past success. Then, look at the feedback your teacher gave you using CLASS terms (like <em>Teacher Sensitivity</em>, <em>Quality of Feedback</em>, or <em>Regard for Student Perspectives</em>).
+              </p>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">
+                    • My Strength (from my reflection on what I enjoy most / a success):
+                  </label>
+                  <textarea id="goalStrengthReflection" rows="3" oninput="saveGoalWorksheet()"
+                    placeholder="Write what energized you or went well in the classroom..."
+                    class="w-full p-2.5 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">
+                    • My Teacher's Feedback (CLASS connection):
+                  </label>
+                  <textarea id="goalTeacherFeedback" rows="3" oninput="saveGoalWorksheet()"
+                    placeholder="Summarize or paste the High/Mid CLASS indicator feedback from above..."
+                    class="w-full p-2.5 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-emerald-800 mb-1">
+                  • My Strengths-Based Goal (Combine your strength and teacher feedback into one action step):
+                </label>
+                <p class="text-[11px] text-slate-500 italic mb-1.5">
+                  Example: Because I enjoy talking with the kids, and my teacher noted my "Regard for Student Perspectives," my goal is to ask two open-ended questions to let children lead the conversation during center time.
+                </p>
+                <textarea id="goalStrengthStatement" rows="2" oninput="saveGoalWorksheet()"
+                  placeholder="Goal: Because I..., and my teacher noted..., my goal is to..."
+                  class="w-full p-2.5 text-sm rounded-lg border-2 border-emerald-300 bg-emerald-50/30 focus:ring-2 focus:ring-emerald-500 outline-none font-medium"></textarea>
+              </div>
+            </div>
+
+            <!-- Part 2: Area for Growth -->
+            <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 space-y-4">
+              <h4 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-amber-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+                Part 2: Area for Growth
+              </h4>
+              <p class="text-xs text-slate-600">
+                Look at the reflection you wrote about a specific thing you want to do differently next time you are in the early childhood classroom, alongside any Low/Mid CLASS indicators above.
+              </p>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  • What I want to do differently next time:
+                </label>
+                <textarea id="goalGrowthReflection" rows="2" oninput="saveGoalWorksheet()"
+                  placeholder="Describe what you decided to do differently next time you go into the classroom..."
+                  class="w-full p-2.5 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-amber-800 mb-1">
+                  • My Growth Goal (Turn this into a specific action step for next time):
+                </label>
+                <p class="text-[11px] text-slate-500 italic mb-1.5">
+                  Example: Next time, I want to handle transitions better. My goal is to use a 2-minute warning song before cleanup time so children know what to expect.
+                </p>
+                <textarea id="goalGrowthStatement" rows="2" oninput="saveGoalWorksheet()"
+                  placeholder="Goal: Next time, I will..."
+                  class="w-full p-2.5 text-sm rounded-lg border-2 border-amber-300 bg-amber-50/30 focus:ring-2 focus:ring-amber-500 outline-none font-medium"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: CUSTOMIZE / PASTE RUBRIC MATRIX TEXT FOR ANY OF THE 10 BROAD AREAS -->
+  <div id="rubricEditorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold flex items-center gap-2">
+            <i class="fa-solid fa-table-list text-amber-400"></i>
+            Customize Scoring Matrix Text — <span id="editorModalAreaName" class="text-indigo-300">Teacher Sensitivity</span>
+          </h3>
+          <p class="text-xs text-slate-300">
+            Edit or add Categories of Skill, bulleted behavioral indicators, and the exact Low (1,2), Mid (3,4,5), and High (6,7) text for this broad area.
+          </p>
+        </div>
+        <button onclick="closeRubricEditorModal()" class="text-slate-400 hover:text-white text-xl px-2">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1" id="editorModalRowsContainer">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <button onclick="addEditorCategoryRow()" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs border border-indigo-200 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> Add Category of Skill Row
+          </button>
+          <button onclick="restoreDefaultAreaRubric()" class="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition flex items-center gap-1.5">
+            <i class="fa-solid fa-rotate"></i> Restore Default Rubric for This Area
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="closeRubricEditorModal()" class="px-4 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs">
+            Cancel
+          </button>
+          <button onclick="saveCustomRubricChanges()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i> Save Matrix Text
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /***********************************************************************
+     * 1. DEFAULT 10 BROAD AREAS RUBRIC DATA (CLASS FRAMEWORK)
+     * Area #3 ("Teacher Sensitivity") contains the 100% exact verbatim text,
+     * capitalization, punctuation, and bulleted indicators from the user's image.
+     ***********************************************************************/
+    const DEFAULT_RUBRIC_AREAS = [
+      {
+        id: 'positive_climate',
+        number: 1,
+        title: 'Positive Climate',
+        domain: 'Emotional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'pc_relationships',
+            name: 'Relationships',
+            bullets: [
+              'Physical proximity',
+              'Shared activities',
+              'Peer assistance',
+              'Matched affect',
+              'Social conversation'
+            ],
+            low: 'There are few, if any, indications that the teacher and students enjoy warm, supportive relationships with one another.',
+            mid: 'There are some indications that the teacher and students enjoy warm, supportive relationships with one another, either between the teacher and students or among the students.',
+            high: 'There are many indications that the teacher and students enjoy warm, supportive relationships with one another.'
+          },
+          {
+            id: 'pc_affect',
+            name: 'Positive Affect',
+            bullets: [
+              'Smiling',
+              'Laughter',
+              'Enthusiasm'
+            ],
+            low: 'The teacher and students display flat or negative affect, and there are rarely instances of smiling, laughter, or enthusiasm.',
+            mid: 'The teacher and students sometimes display positive affect, such as smiling, laughter, or enthusiasm, though it may not be consistent across the observation.',
+            high: 'The teacher and students consistently display positive affect, including frequent smiling, laughter, and enthusiasm.'
+          },
+          {
+            id: 'pc_communications',
+            name: 'Positive Communications',
+            bullets: [
+              'Verbal affection',
+              'Physical affection',
+              'Positive expectations'
+            ],
+            low: 'The teacher rarely communicates positive expectations or verbal/physical affection toward students.',
+            mid: 'The teacher sometimes communicates positive expectations or verbal/physical affection toward students.',
+            high: 'The teacher frequently communicates positive expectations and warm verbal or physical affection toward students.'
+          },
+          {
+            id: 'pc_respect',
+            name: 'Respect',
+            bullets: [
+              'Eye contact',
+              'Warm, calm voice',
+              'Respectful language',
+              'Cooperation and/or sharing'
+            ],
+            low: 'The teacher and students rarely demonstrate respect for one another.',
+            mid: 'The teacher and students sometimes demonstrate respect for one another, though it may not be consistent.',
+            high: 'The teacher and students consistently demonstrate respect for one another through warm tone, eye contact, and respectful language.'
+          }
+        ]
+      },
+      {
+        id: 'negative_climate',
+        number: 2,
+        title: 'Negative Climate',
+        domain: 'Emotional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'nc_negativity',
+            name: 'Negative Affect',
+            bullets: [
+              'Irritability',
+              'Anger',
+              'Harsh voice',
+              'Peer aggression',
+              'Disconnected or escalating negativity'
+            ],
+            low: 'The teacher and students do not display strong negative affect and only rarely, if ever, display mild negativity. (Note: Low Negative Climate is desirable, or customize to match your sheet.)',
+            mid: 'The teacher and/or students display mild negativity occasionally during the observation.',
+            high: 'The teacher and/or students consistently display frustration, irritability, or harsh voice during interactions.'
+          },
+          {
+            id: 'nc_punitive',
+            name: 'Punitive Control',
+            bullets: [
+              'Yelling',
+              'Threats',
+              'Physical control',
+              'Harsh punishment'
+            ],
+            low: 'The teacher does not yell, threaten, or use punitive control with students.',
+            mid: 'The teacher occasionally uses mild threats or punitive control to manage student behavior.',
+            high: 'The teacher frequently uses yelling, threats, or punitive control with students.'
+          },
+          {
+            id: 'nc_sarcasm',
+            name: 'Sarcasm/Disrespect',
+            bullets: [
+              'Sarcastic voice/statement',
+              'Teasing',
+              'Humiliation'
+            ],
+            low: 'The teacher and students do not use sarcastic or disrespectful language.',
+            mid: 'The teacher or students occasionally use teasing or mildly disrespectful comments.',
+            high: 'The teacher or students repeatedly use sarcasm, teasing, or disrespectful communication.'
+          },
+          {
+            id: 'nc_severe',
+            name: 'Severe Negativity',
+            bullets: [
+              'Victimization',
+              'Bullying',
+              'Physical punishment'
+            ],
+            low: 'There are no instances of severe negativity between the teacher and students or among peers.',
+            mid: 'Ambiguous or isolated conflict occurs that is slow to be resolved.',
+            high: 'There are observable instances of severe negativity, bullying, or victimization.'
+          }
+        ]
+      },
+      {
+        id: 'teacher_sensitivity',
+        number: 3,
+        title: 'Teacher Sensitivity',
+        domain: 'Emotional Support',
+        isVerbatimUploaded: true,
+        categories: [
+          {
+            id: 'ts_awareness',
+            name: 'Awareness',
+            bullets: [
+              'Anticipates problems and plans appropriately',
+              'Notices lack of understanding and/or difficulties'
+            ],
+            low: 'The teacher consistently fails to be aware of students who need extra support, assistance, or attention.',
+            mid: 'The teacher is sometimes aware of students who need extra support, assistance, or attention.',
+            high: 'The teacher is consistently aware of students who need extra support, assistance, or attention.'
+          },
+          {
+            id: 'ts_responsiveness',
+            name: 'Responsiveness',
+            bullets: [
+              'Acknowledges emotions',
+              'Provides comfort and assistance',
+              'Provides individualized support'
+            ],
+            low: 'The teacher is unresponsive to or dismissive of students and provides the same level of assistance to all students, regardless of their individual needs.',
+            mid: 'The teacher is responsive to students sometimes but at other times is more dismissive or unresponsive, matching her support to the needs and abilities of some students but not others.',
+            high: 'The teacher is consistently responsive to students and matches her support to their needs and abilities.'
+          },
+          {
+            id: 'ts_addresses_problems',
+            name: 'Addresses Problems',
+            bullets: [
+              'Helps in an effective and timely manner',
+              'Helps resolve problems'
+            ],
+            low: "The teacher is ineffective at addressing students' problems and concerns.",
+            mid: "The teacher is sometimes effective at addressing students' problems and concerns.",
+            high: "The teacher is consistently effective at addressing students' problems and concerns."
+          },
+          {
+            id: 'ts_student_comfort',
+            name: 'Student Comfort',
+            bullets: [
+              'Seeks support and guidance',
+              'Freely participates',
+              'Takes risks'
+            ],
+            low: 'The students rarely seek support, share their ideas with, or respond to questions from the teacher.',
+            mid: 'The students sometimes seek support from, share their ideas with, or respond to questions from the teacher.',
+            high: 'The students appear comfortable seeking support from, sharing their ideas with, and responding freely to the teacher.'
+          }
+        ]
+      },
+      {
+        id: 'regard_for_student_perspectives',
+        number: 4,
+        title: 'Regard for Student Perspectives',
+        domain: 'Emotional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'rsp_flexibility',
+            name: 'Flexibility and Student Focus',
+            bullets: [
+              'Shows flexibility',
+              'Incorporates students\' ideas',
+              'Follows lead'
+            ],
+            low: 'The teacher is rigid, inflexible, and controlling in her plans and/or rarely follows the students\' lead.',
+            mid: 'The teacher may follow the students\' lead during some periods and be more controlling during others.',
+            high: 'The teacher is flexible in her plans, goes along with students\' ideas, and organizes instruction around students\' interests.'
+          },
+          {
+            id: 'rsp_autonomy',
+            name: 'Support for Autonomy and Leadership',
+            bullets: [
+              'Allows choice',
+              'Allows students to lead lessons',
+              'Gives students responsibility'
+            ],
+            low: 'The teacher does not support student autonomy and leadership by failing to provide opportunities for student choice or responsibility.',
+            mid: 'The teacher sometimes provides support for student autonomy and leadership.',
+            high: 'The teacher consistently supports student autonomy and provides meaningful leadership opportunities.'
+          },
+          {
+            id: 'rsp_expression',
+            name: 'Student Expression',
+            bullets: [
+              'Encourages student talk',
+              'Elicits ideas and/or perspectives'
+            ],
+            low: 'There are few opportunities for student talk and expression; the teacher controls most conversations.',
+            mid: 'There are some opportunities for students to talk and express their ideas.',
+            high: 'The teacher consistently encourages student talk and elicits students\' ideas and perspectives.'
+          },
+          {
+            id: 'rsp_movement',
+            name: 'Restriction of Movement',
+            bullets: [
+              'Allows movement',
+              'Is not rigid'
+            ],
+            low: 'The teacher is controlling of students\' movement and placement during activities.',
+            mid: 'The teacher is somewhat controlling of students\' movement, or allows movement only at certain times.',
+            high: 'The teacher is not rigid about student movement and allows reasonable freedom of movement for children.'
+          }
+        ]
+      },
+      {
+        id: 'behavior_management',
+        number: 5,
+        title: 'Behavior Management',
+        domain: 'Classroom Organization',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'bm_expectations',
+            name: 'Clear Behavior Expectations',
+            bullets: [
+              'Clear expectations',
+              'Consistency',
+              'Clarity of rules'
+            ],
+            low: 'Rules and expectations are absent, unclear, or inconsistently enforced.',
+            mid: 'Rules and expectations may be stated, but they are inconsistently enforced.',
+            high: 'Rules and expectations for behavior are clear and consistently promoted.'
+          },
+          {
+            id: 'bm_proactive',
+            name: 'Proactive',
+            bullets: [
+              'Anticipates problem behavior or escalation',
+              'Low reactivity',
+              'Monitors'
+            ],
+            low: 'The teacher is reactive, and monitoring is absent or ineffective.',
+            mid: 'The teacher uses a mix of proactive and reactive responses; sometimes monitors and anticipates problems.',
+            high: 'The teacher is consistently proactive, monitors the classroom effectively, and prevents problems from developing.'
+          },
+          {
+            id: 'bm_redirection',
+            name: 'Redirection of Misbehavior',
+            bullets: [
+              'Effective reduction of misbehavior',
+              'Attention toigue/positive',
+              'Uses subtle cues to redirect',
+              'Efficient'
+            ],
+            low: 'Attempts to redirect misbehavior are ineffective and/or take precious time away from learning.',
+            mid: 'Some attempts to redirect misbehavior are successful, particularly when focusing on positives and using subtle cues.',
+            high: 'The teacher effectively redirects misbehavior by focusing on positives and making use of subtle cues.'
+          },
+          {
+            id: 'bm_student_behavior',
+            name: 'Student Behavior',
+            bullets: [
+              'Frequent compliance',
+              'Little aggression and defiance'
+            ],
+            low: 'There is frequent misbehavior, defiance, or aggression among students.',
+            mid: 'There are periodic episodes of misbehavior, though students generally comply with expectations.',
+            high: 'There are few, if any, instances of student misbehavior in the classroom.'
+          }
+        ]
+      },
+      {
+        id: 'productivity',
+        number: 6,
+        title: 'Productivity',
+        domain: 'Classroom Organization',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'prod_maximizing',
+            name: 'Maximizing Learning Time',
+            bullets: [
+              'Provision of activities',
+              'Choice when finished',
+              'Few disruptions',
+              'Effective completion of managerial tasks',
+              'Pacing'
+            ],
+            low: 'Few activities are provided, and/or vast amounts of time are lost to disruptions and managerial tasks.',
+            mid: 'Most of the time the teacher provides activities for students, though some learning time is lost to disruptions or management.',
+            high: 'The teacher consistently provides learning activities for students and deals efficiently with disruptions and managerial tasks.'
+          },
+          {
+            id: 'prod_routines',
+            name: 'Routines',
+            bullets: [
+              'Students know what to do',
+              'Clear instructions',
+              'Little wandering'
+            ],
+            low: 'Classroom routines are unclear; students frequently do not know what is expected of them.',
+            mid: 'There is some evidence that routines exist, but students need frequent reminders.',
+            high: 'The classroom runs like a well-oiled machine; everybody knows what is expected of them and how to go about doing it.'
+          },
+          {
+            id: 'prod_transitions',
+            name: 'Transitions',
+            bullets: [
+              'Brief',
+              'Explicit follow-through',
+              'Learning opportunities within'
+            ],
+            low: 'Transitions are too long and/or too frequent, with no learning opportunities provided.',
+            mid: 'Transitions are sometimes too long, though the teacher occasionally incorporates learning signals or songs.',
+            high: 'Transitions are quick and efficient, often incorporating subtle learning opportunities.'
+          },
+          {
+            id: 'prod_preparation',
+            name: 'Preparation',
+            bullets: [
+              'Materials ready and accessible',
+              'Knows lessons'
+            ],
+            low: 'The teacher does not have materials prepared and ready for students.',
+            mid: 'The teacher is mostly prepared for activities, but takes some time away from instruction to gather materials.',
+            high: 'The teacher is fully prepared for activities and lessons with materials ready and accessible.'
+          }
+        ]
+      },
+      {
+        id: 'instructional_learning_formats',
+        number: 7,
+        title: 'Instructional Learning Formats',
+        domain: 'Classroom Organization',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'ilf_facilitation',
+            name: 'Effective Facilitation',
+            bullets: [
+              'Teacher involvement',
+              'Effective questioning',
+              'Expanding children\'s involvement'
+            ],
+            low: 'The teacher does not actively facilitate activities to draw students in or promote interest.',
+            mid: 'The teacher at times actively facilitates activities to promote interest, but at other times merely provides materials.',
+            high: 'The teacher actively facilitates students\' engagement in activities and lessons to encourage participation and expanded involvement.'
+          },
+          {
+            id: 'ilf_modalities',
+            name: 'Variety of Modalities and Materials',
+            bullets: [
+              'Range of auditory, visual, and movement opportunities',
+              'Interesting and creative materials',
+              'Hands-on opportunities'
+            ],
+            low: 'The teacher uses a limited range of modalities and materials; students rarely have hands-on interaction.',
+            mid: 'The teacher uses a variety of modalities and materials inconsistently to gain students\' interest.',
+            high: 'The teacher consistently uses a variety of modalities including auditory, visual, and movement and uses creative hands-on materials.'
+          },
+          {
+            id: 'ilf_interest',
+            name: 'Student Interest',
+            bullets: [
+              'Active participation',
+              'Listening',
+              'Focused attention'
+            ],
+            low: 'Students are uninterested and uninvolved in activities and lessons.',
+            mid: 'Students may be engaged for periods of time, or some students are engaged while others are not.',
+            high: 'Students are consistently interested and involved in activities and lessons.'
+          },
+          {
+            id: 'ilf_clarity',
+            name: 'Clarity of Learning Objectives',
+            bullets: [
+              'Advanced organizers',
+              'Summaries',
+              'Reorientation statements'
+            ],
+            low: 'The teacher makes no attempt, or unsuccessful attempts, to orient students toward learning objectives.',
+            mid: 'The teacher sometimes orients students to learning objectives, or does so clearly at some times and not others.',
+            high: 'The teacher effectively focuses students\' attention toward learning objectives through advanced organizers and reorientation statements.'
+          }
+        ]
+      },
+      {
+        id: 'concept_development',
+        number: 8,
+        title: 'Concept Development',
+        domain: 'Instructional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'cd_analysis',
+            name: 'Analysis and Reasoning',
+            bullets: [
+              'Why and/or how questions',
+              'Problem solving',
+              'Prediction/experimentation',
+              'Classification/comparison',
+              'Evaluation'
+            ],
+            low: 'The teacher rarely asks questions or engages students in activities that promote analysis and reasoning.',
+            mid: 'The teacher occasionally uses discussions and activities that encourage analysis and reasoning.',
+            high: 'The teacher often uses discussions and activities that encourage analysis and reasoning, including why/how questions and problem solving.'
+          },
+          {
+            id: 'cd_creating',
+            name: 'Creating',
+            bullets: [
+              'Brainstorming',
+              'Planning',
+              'Producing'
+            ],
+            low: 'The teacher rarely provides opportunities for students to be creative or generate their own ideas and products.',
+            mid: 'The teacher sometimes provides opportunities for students to brainstorm, plan, or produce their own work.',
+            high: 'The teacher often provides opportunities for students to be creative and generate their own ideas and products.'
+          },
+          {
+            id: 'cd_integration',
+            name: 'Integration',
+            bullets: [
+              'Connects concepts',
+              'Integrates with previous knowledge'
+            ],
+            low: 'Concepts and activities are presented independent of one another and are not linked to prior learning.',
+            mid: 'The teacher sometimes links concepts and activities to one another and to previous learning.',
+            high: 'The teacher consistently links concepts and activities to one another and to previous learning.'
+          },
+          {
+            id: 'cd_real_world',
+            name: 'Connections to the Real World',
+            bullets: [
+              'Real-world applications',
+              'Related to students\' lives'
+            ],
+            low: 'The teacher makes no attempt to apply concepts to the real world or students\' actual lives.',
+            mid: 'The teacher makes some attempts to relate concepts to the real world or students\' lives.',
+            high: 'The teacher consistently relates concepts to students\' actual lives and real-world applications.'
+          }
+        ]
+      },
+      {
+        id: 'quality_of_feedback',
+        number: 9,
+        title: 'Quality of Feedback',
+        domain: 'Instructional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'qf_scaffolding',
+            name: 'Scaffolding',
+            bullets: [
+              'Hints',
+              'Assistance'
+            ],
+            low: 'The teacher rarely provides scaffolding to students, simply dismissing responses as incorrect or ignoring problems.',
+            mid: 'The teacher occasionally provides scaffolding to students, such as basic hints or assistance.',
+            high: 'The teacher often scaffolds for students who are having a hard time understanding a concept or completing an activity.'
+          },
+          {
+            id: 'qf_loops',
+            name: 'Feedback Loops',
+            bullets: [
+              'Back-and-forth exchanges',
+              'Persistence by teacher',
+              'Follow-up questions'
+            ],
+            low: 'The teacher gives mostly perfunctory feedback ("good job") without sustained back-and-forth exchanges.',
+            mid: 'The teacher engages in occasional feedback loops with some back-and-forth exchanges.',
+            high: 'The teacher engages in frequent feedback loops, sustaining back-and-forth exchanges and follow-up questions to help students understand.'
+          },
+          {
+            id: 'qf_prompting',
+            name: 'Prompting Thought Processes',
+            bullets: [
+              'Asks students to explain thinking',
+              'Queries responses and actions'
+            ],
+            low: 'The teacher rarely queries students to explain their thinking or rationale.',
+            mid: 'The teacher occasionally queries students to explain their thinking or actions.',
+            high: 'The teacher often prompts students to explain their thinking and rationale for responses and actions.'
+          },
+          {
+            id: 'qf_information',
+            name: 'Providing Information',
+            bullets: [
+              'Expansion',
+              'Clarification',
+              'Specific feedback'
+            ],
+            low: 'The teacher rarely expands, clarifies, or provides specific information in response to student work.',
+            mid: 'The teacher occasionally expands, clarifies, or provides specific feedback to students.',
+            high: 'The teacher often expands, clarifies, and provides specific information so students understand why an answer is right or how to improve.'
+          },
+          {
+            id: 'qf_encouragement',
+            name: 'Encouragement and Affirmation',
+            bullets: [
+              'Recognition',
+              'Reinforcement',
+              'Student persistence'
+            ],
+            low: 'The teacher rarely recognizes or affirms student effort and persistence.',
+            mid: 'The teacher occasionally recognizes and affirms student effort.',
+            high: 'The teacher consistently provides specific encouragement and affirmation that sustains student effort and persistence.'
+          }
+        ]
+      },
+      {
+        id: 'language_modeling',
+        number: 10,
+        title: 'Language Modeling',
+        domain: 'Instructional Support',
+        isVerbatimUploaded: false,
+        categories: [
+          {
+            id: 'lm_conversations',
+            name: 'Frequent Conversations',
+            bullets: [
+              'Back-and-forth exchanges',
+              'Contingent responding',
+              'Peer conversations'
+            ],
+            low: 'There are few conversations in the classroom, or conversations are rarely contingent on students\' comments.',
+            mid: 'There are occasional back-and-forth conversations between the teacher and students or among peers.',
+            high: 'There are frequent back-and-forth conversations and contingent responding between the teacher and students and among peers.'
+          },
+          {
+            id: 'lm_open_ended',
+            name: 'Open-Ended Questions',
+            bullets: [
+              'Questions require more than a one-word response',
+              'Students respond'
+            ],
+            low: 'The majority of the teacher\'s questions are closed-ended, requiring only a one-word response.',
+            mid: 'The teacher asks a mix of closed-ended and open-ended questions.',
+            high: 'The teacher frequently asks open-ended questions that invite extended student responses.'
+          },
+          {
+            id: 'lm_repetition',
+            name: 'Repetition and Extension',
+            bullets: [
+              'Repeats',
+              'Extends/elaborates'
+            ],
+            low: 'The teacher rarely repeats or extends students\' responses.',
+            mid: 'The teacher sometimes repeats or extends students\' responses.',
+            high: 'The teacher often repeats and extends or elaborates upon students\' responses.'
+          },
+          {
+            id: 'lm_self_parallel',
+            name: 'Self- and Parallel Talk',
+            bullets: [
+              'Maps own actions with language',
+              'Maps student action with language'
+            ],
+            low: 'The teacher rarely maps her own actions or the students\' actions using language.',
+            mid: 'The teacher occasionally maps her own actions and the students\' actions through language.',
+            high: 'The teacher consistently maps her own actions and the students\' actions through rich language and description.'
+          },
+          {
+            id: 'lm_advanced',
+            name: 'Advanced Language',
+            bullets: [
+              'Variety of words',
+              'Connected to familiar words and/or ideas'
+            ],
+            low: 'The teacher does not use advanced language or connect new vocabulary to familiar concepts.',
+            mid: 'The teacher sometimes uses advanced language or new vocabulary.',
+            high: 'The teacher frequently uses a rich variety of words and connects new vocabulary to familiar words and ideas.'
+          }
+        ]
+      }
+    ];
+
+    /***********************************************************************
+     * 2. APPLICATION STATE & STORAGE MANAGEMENT
+     ***********************************************************************/
+    const STORAGE_KEY_RUBRIC = 'ece_cte_class_rubric_v1';
+    const STORAGE_KEY_PROFILES = 'ece_cte_class_profiles_v1';
+    const STORAGE_KEY_ACTIVE_PROFILE = 'ece_cte_class_active_profile_v1';
+
+    let rubricAreas = [];
+    let observationProfiles = [];
+    let currentProfileId = null;
+    let activeAreaIndex = 2; // Default to index 2 -> Area #3: "Teacher Sensitivity"
+    let currentMainView = 'matrix'; // 'matrix' or 'report'
+
+    function createBlankProfile(name = 'Sample ECE-CTE Senior') {
+      const today = new Date().toISOString().split('T')[0];
+      return {
+        id: 'prof_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        teacherName: name,
+        observerName: 'ECE-CTE Instructor',
+        date: today,
+        classroom: 'Pre-K Lab Classroom',
+        // ratings: { [areaId]: { categories: { [catId]: { band: 'low'|'mid'|'high', score: 1..7, note: '' } }, observerNotes: '', studentGoal: '' } }
+        ratings: {},
+        goalWorksheet: {
+          strengthReflection: '',
+          teacherFeedback: '',
+          strengthStatement: '',
+          growthReflection: '',
+          growthStatement: ''
+        }
+      };
+    }
+
+    function loadState() {
+      // Load custom or default rubric
+      try {
+        const savedRubric = localStorage.getItem(STORAGE_KEY_RUBRIC);
+        if (savedRubric) {
+          rubricAreas = JSON.parse(savedRubric);
+          // Ensure Teacher Sensitivity exact verbatim is always intact unless purposefully edited
+        } else {
+          rubricAreas = JSON.parse(JSON.stringify(DEFAULT_RUBRIC_AREAS));
+        }
+      } catch (e) {
+        rubricAreas = JSON.parse(JSON.stringify(DEFAULT_RUBRIC_AREAS));
+      }
+
+      // Load observation profiles
+      try {
+        const savedProfiles = localStorage.getItem(STORAGE_KEY_PROFILES);
+        if (savedProfiles) {
+          observationProfiles = JSON.parse(savedProfiles);
+        }
+      } catch (e) {
+        observationProfiles = [];
+      }
+
+      if (!observationProfiles || observationProfiles.length === 0) {
+        const sample = createBlankProfile('Alex Rivera (ECE-CTE Senior)');
+        observationProfiles = [sample];
+      }
+
+      const savedActiveId = localStorage.getItem(STORAGE_KEY_ACTIVE_PROFILE);
+      if (savedActiveId && observationProfiles.some(p => p.id === savedActiveId)) {
+        currentProfileId = savedActiveId;
+      } else {
+        currentProfileId = observationProfiles[0].id;
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY_RUBRIC, JSON.stringify(rubricAreas));
+        localStorage.setItem(STORAGE_KEY_PROFILES, JSON.stringify(observationProfiles));
+        localStorage.setItem(STORAGE_KEY_ACTIVE_PROFILE, currentProfileId);
+      } catch (e) {
+        console.error('Could not save state to localStorage', e);
+      }
+    }
+
+    function getCurrentProfile() {
+      return observationProfiles.find(p => p.id === currentProfileId) || observationProfiles[0];
+    }
+
+    function getAreaRatingObj(profile, areaId) {
+      if (!profile.ratings[areaId]) {
+        profile.ratings[areaId] = {
+          categories: {},
+          observerNotes: '',
+          studentGoal: ''
+        };
+      }
+      return profile.ratings[areaId];
+    }
+
+    /***********************************************************************
+     * 3. SCORING CALCULATIONS
+     ***********************************************************************/
+    function calculateAreaStats(profile, area) {
+      const areaData = profile.ratings[area.id];
+      if (!areaData || !areaData.categories) {
+        return { ratedCount: 0, totalCount: area.categories.length, average: null, band: null };
+      }
+
+      let sum = 0;
+      let ratedCount = 0;
+      area.categories.forEach(cat => {
+        const r = areaData.categories[cat.id];
+        if (r && r.band && typeof r.score === 'number') {
+          sum += r.score;
+          ratedCount++;
+        }
+      });
+
+      if (ratedCount === 0) {
+        return { ratedCount: 0, totalCount: area.categories.length, average: null, band: null };
+      }
+
+      const avg = sum / ratedCount;
+      let band = 'Mid';
+      if (avg < 2.5) band = 'Low';
+      else if (avg >= 5.5) band = 'High';
+
+      return {
+        ratedCount,
+        totalCount: area.categories.length,
+        average: avg,
+        band
+      };
+    }
+
+    function calculateOverallStats(profile) {
+      let areaAverages = [];
+      rubricAreas.forEach(area => {
+        const st = calculateAreaStats(profile, area);
+        if (st.average !== null) {
+          areaAverages.push(st.average);
+        }
+      });
+
+      if (areaAverages.length === 0) {
+        return { areasRated: 0, overallAverage: null, overallBand: 'Not Rated' };
+      }
+
+      const mean = areaAverages.reduce((a, b) => a + b, 0) / areaAverages.length;
+      let band = 'Mid (3,4,5)';
+      if (mean < 2.5) band = 'Low (1,2)';
+      else if (mean >= 5.5) band = 'High (6,7)';
+
+      return {
+        areasRated: areaAverages.length,
+        overallAverage: mean,
+        overallBand: band
+      };
+    }
+
+    /***********************************************************************
+     * 4. UI RENDERING FUNCTIONS
+     ***********************************************************************/
+    function renderAll() {
+      renderProfileSelector();
+      renderMetadataHeader();
+      renderBroadAreasSidebar();
+      renderActiveMatrix();
+      if (currentMainView === 'report') {
+        renderReportView();
+      }
+    }
+
+    function renderProfileSelector() {
+      const sel = document.getElementById('profileSelector');
+      sel.innerHTML = observationProfiles.map(p => {
+        const label = p.teacherName ? p.teacherName : 'Unnamed Observation';
+        const selected = p.id === currentProfileId ? 'selected' : '';
+        return `<option value="${p.id}" ${selected}>${escapeHtml(label)} (${p.date || 'No date'})</option>`;
+      }).join('');
+    }
+
+    function renderMetadataHeader() {
+      const profile = getCurrentProfile();
+      document.getElementById('metaTeacherName').value = profile.teacherName || '';
+      document.getElementById('metaObserverName').value = profile.observerName || '';
+      document.getElementById('metaDate').value = profile.date || '';
+      document.getElementById('metaClassroom').value = profile.classroom || '';
+
+      updateOverallSummaryBadges();
+    }
+
+    function updateOverallSummaryBadges() {
+      const profile = getCurrentProfile();
+      const overall = calculateOverallStats(profile);
+
+      const avgEl = document.getElementById('overallAverageScore');
+      const badgeEl = document.getElementById('overallBandBadge');
+      const countEl = document.getElementById('areasCompletedCount');
+
+      countEl.textContent = `${overall.areasRated} / ${rubricAreas.length}`;
+
+      if (overall.overallAverage === null) {
+        avgEl.textContent = '—';
+        badgeEl.textContent = 'Not Rated';
+        badgeEl.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700';
+      } else {
+        avgEl.textContent = overall.overallAverage.toFixed(2);
+        badgeEl.textContent = overall.overallBand;
+        if (overall.overallBand.startsWith('Low')) {
+          badgeEl.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300';
+        } else if (overall.overallBand.startsWith('Mid')) {
+          badgeEl.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300';
+        } else {
+          badgeEl.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+        }
+      }
+    }
+
+    function renderBroadAreasSidebar() {
+      const nav = document.getElementById('broadAreasNav');
+      const profile = getCurrentProfile();
+
+      nav.innerHTML = rubricAreas.map((area, idx) => {
+        const isActive = idx === activeAreaIndex;
+        const stats = calculateAreaStats(profile, area);
+
+        let domainColor = 'text-rose-600';
+        if (area.domain === 'Classroom Organization') domainColor = 'text-sky-600';
+        if (area.domain === 'Instructional Support') domainColor = 'text-violet-600';
+
+        let scorePill = `<span class="text-[11px] font-medium text-slate-400">${stats.ratedCount}/${stats.totalCount}</span>`;
+        if (stats.average !== null) {
+          let pillStyle = 'bg-amber-100 text-amber-800 border-amber-300';
+          if (stats.band === 'Low') pillStyle = 'bg-rose-100 text-rose-800 border-rose-300';
+          if (stats.band === 'High') pillStyle = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+          scorePill = `<span class="text-xs font-bold px-2 py-0.5 rounded-full border ${pillStyle}">${stats.average.toFixed(1)} (${stats.band})</span>`;
+        }
+
+        return `
+          <button onclick="selectBroadArea(${idx})"
+            class="w-full text-left px-4 py-3 transition flex items-center justify-between gap-2 ${
+              isActive
+                ? 'bg-indigo-50/90 border-l-4 border-indigo-600 font-semibold'
+                : 'hover:bg-slate-50 border-l-4 border-transparent'
+            }">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider ${domainColor}">${escapeHtml(area.domain)}</span>
+                ${area.isVerbatimUploaded ? '<span title="Exact Verbatim Matrix" class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 rounded font-semibold">★ Verbatim</span>' : ''}
+              </div>
+              <div class="text-sm text-slate-900 truncate mt-0.5">
+                ${area.number}. ${escapeHtml(area.title)}
+              </div>
+            </div>
+            <div class="shrink-0">
+              ${scorePill}
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderActiveMatrix() {
+      const area = rubricAreas[activeAreaIndex];
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, area.id);
+      const stats = calculateAreaStats(profile, area);
+
+      // Update Top Header Info
+      document.getElementById('activeAreaNumberBadge').textContent = area.number;
+      document.getElementById('activeAreaTitleTop').textContent = area.title;
+      document.getElementById('matrixBannerTitle').textContent = area.title;
+      document.getElementById('feedbackAreaName').textContent = area.title;
+
+      const domainBadge = document.getElementById('activeAreaDomainBadge');
+      domainBadge.textContent = area.domain;
+      if (area.domain === 'Emotional Support') {
+        domainBadge.className = 'text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-100 text-rose-800';
+      } else if (area.domain === 'Classroom Organization') {
+        domainBadge.className = 'text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-sky-100 text-sky-800';
+      } else {
+        domainBadge.className = 'text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-violet-100 text-violet-800';
+      }
+
+      const verbatimTag = document.getElementById('activeAreaVerbatimTag');
+      if (area.isVerbatimUploaded) {
+        verbatimTag.className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 flex items-center gap-1';
+        verbatimTag.innerHTML = '<i class="fa-solid fa-check-circle"></i> Exact Verbatim Matrix';
+      } else {
+        verbatimTag.className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 flex items-center gap-1';
+        verbatimTag.innerHTML = '<i class="fa-solid fa-pen"></i> Standard CLASS Template (Editable)';
+      }
+
+      // Update Active Area Calculated Score
+      const avgEl = document.getElementById('activeAreaAvgScore');
+      const bandEl = document.getElementById('activeAreaBandLabel');
+      if (stats.average === null) {
+        avgEl.textContent = '—';
+        bandEl.textContent = `Unrated (0/${stats.totalCount})`;
+        bandEl.className = 'text-xs font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700';
+      } else {
+        avgEl.textContent = stats.average.toFixed(2);
+        bandEl.textContent = `${stats.band} (${stats.ratedCount}/${stats.totalCount})`;
+        if (stats.band === 'Low') {
+          bandEl.className = 'text-xs font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300';
+        } else if (stats.band === 'Mid') {
+          bandEl.className = 'text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300';
+        } else {
+          bandEl.className = 'text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300';
+        }
+      }
+
+      // Render Matrix Rows (Exact Verbatim Layout)
+      const container = document.getElementById('matrixRowsContainer');
+      container.innerHTML = area.categories.map(cat => {
+        const currentRating = areaRatingObj.categories[cat.id] || null;
+        const selectedBand = currentRating ? currentRating.band : null;
+        const selectedScore = currentRating ? currentRating.score : null;
+
+        const lowSelectedClass = selectedBand === 'low' ? 'rating-selected-low' : 'bg-white hover:bg-rose-50/40 border-slate-200';
+        const midSelectedClass = selectedBand === 'mid' ? 'rating-selected-mid' : 'bg-white hover:bg-amber-50/40 border-slate-200';
+        const highSelectedClass = selectedBand === 'high' ? 'rating-selected-high' : 'bg-white hover:bg-emerald-50/40 border-slate-200';
+
+        return `
+          <div class="grid grid-cols-12 gap-3 py-5 items-stretch">
+            <!-- Left Column: Category of Skill & Bulleted Indicators -->
+            <div class="col-span-3 pr-3 flex flex-col justify-between">
+              <div>
+                <h4 class="text-lg font-bold text-slate-900 leading-snug mb-1.5">
+                  ${escapeHtml(cat.name)}
+                </h4>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-slate-800 leading-snug">
+                  ${cat.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}
+                </ul>
+              </div>
+
+              ${selectedBand ? `
+                <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider ${
+                    selectedBand === 'low' ? 'text-rose-700' : selectedBand === 'mid' ? 'text-amber-700' : 'text-emerald-700'
+                  }">
+                    Rated: ${selectedBand.toUpperCase()} (${selectedScore})
+                  </span>
+                  <button onclick="clearCategoryRating('${area.id}', '${cat.id}')" class="text-[11px] text-slate-400 hover:text-rose-600 underline">
+                    Clear
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Right 3 Columns: Low (1,2), Mid (3,4,5), High (6,7) -->
+            <div class="col-span-9 grid grid-cols-3 gap-3">
+
+              <!-- LOW (1,2) Cell -->
+              <div onclick="selectCategoryBand('${area.id}', '${cat.id}', 'low', 2)"
+                class="rating-cell rounded-xl border p-3.5 flex flex-col justify-between ${lowSelectedClass}">
+                <p class="text-sm text-slate-900 leading-relaxed">
+                  ${escapeHtml(cat.low)}
+                </p>
+                <div class="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-bold uppercase tracking-wider ${selectedBand === 'low' ? 'text-rose-700' : 'text-slate-400'}">
+                    ${selectedBand === 'low' ? '<i class="fa-solid fa-circle-check"></i> Low Selected' : 'Click for Low'}
+                  </span>
+                  <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                    ${[1, 2].map(num => `
+                      <button onclick="selectCategoryBand('${area.id}', '${cat.id}', 'low', ${num})"
+                        class="w-7 h-7 rounded-lg text-xs font-bold transition ${
+                          selectedScore === num
+                            ? 'bg-rose-600 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-rose-100 text-slate-700'
+                        }">
+                        ${num}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- MID (3,4,5) Cell -->
+              <div onclick="selectCategoryBand('${area.id}', '${cat.id}', 'mid', 4)"
+                class="rating-cell rounded-xl border p-3.5 flex flex-col justify-between ${midSelectedClass}">
+                <p class="text-sm text-slate-900 leading-relaxed">
+                  ${escapeHtml(cat.mid)}
+                </p>
+                <div class="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-bold uppercase tracking-wider ${selectedBand === 'mid' ? 'text-amber-700' : 'text-slate-400'}">
+                    ${selectedBand === 'mid' ? '<i class="fa-solid fa-circle-check"></i> Mid Selected' : 'Click for Mid'}
+                  </span>
+                  <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                    ${[3, 4, 5].map(num => `
+                      <button onclick="selectCategoryBand('${area.id}', '${cat.id}', 'mid', ${num})"
+                        class="w-7 h-7 rounded-lg text-xs font-bold transition ${
+                          selectedScore === num
+                            ? 'bg-amber-600 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-amber-100 text-slate-700'
+                        }">
+                        ${num}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- HIGH (6,7) Cell -->
+              <div onclick="selectCategoryBand('${area.id}', '${cat.id}', 'high', 6)"
+                class="rating-cell rounded-xl border p-3.5 flex flex-col justify-between ${highSelectedClass}">
+                <p class="text-sm text-slate-900 leading-relaxed">
+                  ${escapeHtml(cat.high)}
+                </p>
+                <div class="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-bold uppercase tracking-wider ${selectedBand === 'high' ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${selectedBand === 'high' ? '<i class="fa-solid fa-circle-check"></i> High Selected' : 'Click for High'}
+                  </span>
+                  <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                    ${[6, 7].map(num => `
+                      <button onclick="selectCategoryBand('${area.id}', '${cat.id}', 'high', ${num})"
+                        class="w-7 h-7 rounded-lg text-xs font-bold transition ${
+                          selectedScore === num
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-emerald-100 text-slate-700'
+                        }">
+                        ${num}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Populate Feedback & Student Goal Notes for this broad area
+      document.getElementById('areaObserverNotes').value = areaRatingObj.observerNotes || '';
+      document.getElementById('areaStudentGoal').value = areaRatingObj.studentGoal || '';
+
+      // Prev / Next buttons state
+      document.getElementById('btnPrevArea').disabled = activeAreaIndex === 0;
+      document.getElementById('btnPrevArea').classList.toggle('opacity-50', activeAreaIndex === 0);
+      document.getElementById('btnNextArea').disabled = activeAreaIndex === rubricAreas.length - 1;
+      document.getElementById('btnNextArea').classList.toggle('opacity-50', activeAreaIndex === rubricAreas.length - 1);
+    }
+
+    /***********************************************************************
+     * 5. INTERACTIVE RATING & NOTES HANDLERS
+     ***********************************************************************/
+    function selectCategoryBand(areaId, catId, band, defaultScore) {
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, areaId);
+
+      areaRatingObj.categories[catId] = {
+        band,
+        score: defaultScore
+      };
+
+      saveState();
+      renderBroadAreasSidebar();
+      renderActiveMatrix();
+      updateOverallSummaryBadges();
+    }
+
+    function clearCategoryRating(areaId, catId) {
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, areaId);
+      delete areaRatingObj.categories[catId];
+
+      saveState();
+      renderBroadAreasSidebar();
+      renderActiveMatrix();
+      updateOverallSummaryBadges();
+    }
+
+    function clearCurrentAreaRatings() {
+      const area = rubricAreas[activeAreaIndex];
+      const profile = getCurrentProfile();
+      profile.ratings[area.id] = {
+        categories: {},
+        observerNotes: '',
+        studentGoal: ''
+      };
+      saveState();
+      renderAll();
+      showToast(`Cleared ratings for ${area.title}`);
+    }
+
+    function saveAreaNotes() {
+      const area = rubricAreas[activeAreaIndex];
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, area.id);
+
+      areaRatingObj.observerNotes = document.getElementById('areaObserverNotes').value;
+      areaRatingObj.studentGoal = document.getElementById('areaStudentGoal').value;
+      saveState();
+    }
+
+    function insertSelectedDescriptorsIntoFeedback() {
+      const area = rubricAreas[activeAreaIndex];
+      const profile = getCurrentProfile();
+      const areaRatingObj = getAreaRatingObj(profile, area.id);
+
+      let lines = [];
+      area.categories.forEach(cat => {
+        const r = areaRatingObj.categories[cat.id];
+        if (r && r.band) {
+          const text = cat[r.band];
+          const bandLabel = r.band === 'low' ? 'Low (1,2)' : r.band === 'mid' ? 'Mid (3,4,5)' : 'High (6,7)';
+          lines.push(`• ${cat.name} [${bandLabel} — Score ${r.score}]: "${text}"`);
+        }
+      });
+
+      if (lines.length === 0) {
+        showToast('Select at least one Low, Mid, or High cell in this matrix first!', 'amber');
+        return;
+      }
+
+      const currentNotes = document.getElementById('areaObserverNotes').value.trim();
+      const combined = (currentNotes ? currentNotes + '\n\n' : '') +
+        `CLASS ${area.title} Rubric Judgments:\n` + lines.join('\n');
+
+      document.getElementById('areaObserverNotes').value = combined;
+      saveAreaNotes();
+      showToast('Inserted verbatim rubric descriptors into Observer Feedback!');
+    }
+
+    function selectBroadArea(index) {
+      activeAreaIndex = index;
+      renderBroadAreasSidebar();
+      renderActiveMatrix();
+    }
+
+    function navigateArea(delta) {
+      const next = activeAreaIndex + delta;
+      if (next >= 0 && next < rubricAreas.length) {
+        selectBroadArea(next);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function updateMetadata() {
+      const profile = getCurrentProfile();
+      profile.teacherName = document.getElementById('metaTeacherName').value;
+      profile.observerName = document.getElementById('metaObserverName').value;
+      profile.date = document.getElementById('metaDate').value;
+      profile.classroom = document.getElementById('metaClassroom').value;
+      saveState();
+      renderProfileSelector();
+    }
+
+    /***********************************************************************
+     * 6. OBSERVATION PROFILE SWITCHING (MULTIPLE STUDENTS/TEACHERS)
+     ***********************************************************************/
+    function switchObservationProfile(profileId) {
+      currentProfileId = profileId;
+      saveState();
+      renderAll();
+      showToast('Switched active observation record');
+    }
+
+    function createNewObservationProfile() {
+      const count = observationProfiles.length + 1;
+      const newProf = createBlankProfile(`Student Teacher #${count}`);
+      observationProfiles.unshift(newProf);
+      currentProfileId = newProf.id;
+      saveState();
+      renderAll();
+      document.getElementById('metaTeacherName').focus();
+      document.getElementById('metaTeacherName').select();
+      showToast('Created new Teacher Observation sheet!');
+    }
+
+    function deleteCurrentProfile() {
+      if (observationProfiles.length <= 1) {
+        // Reset the single profile instead
+        observationProfiles[0] = createBlankProfile('New Student Teacher');
+        currentProfileId = observationProfiles[0].id;
+        saveState();
+        renderAll();
+        showToast('Reset observation sheet to blank');
+        return;
+      }
+
+      observationProfiles = observationProfiles.filter(p => p.id !== currentProfileId);
+      currentProfileId = observationProfiles[0].id;
+      saveState();
+      renderAll();
+      showToast('Removed observation record');
+    }
+
+    /***********************************************************************
+     * 7. SUMMARY REPORT & ECE-CTE GOAL ASSIGNMENT VIEW
+     ***********************************************************************/
+    function setMainView(view) {
+      currentMainView = view;
+      const matrixEl = document.getElementById('viewMatrix');
+      const reportEl = document.getElementById('viewReport');
+      const btnMatrix = document.getElementById('tabBtnMatrix');
+      const btnReport = document.getElementById('tabBtnReport');
+
+      if (view === 'report') {
+        matrixEl.classList.add('hidden');
+        reportEl.classList.remove('hidden');
+        btnReport.className = 'px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold bg-indigo-600 text-white transition flex items-center gap-1.5';
+        btnMatrix.className = 'px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5';
+        renderReportView();
+      } else {
+        reportEl.classList.add('hidden');
+        matrixEl.classList.remove('hidden');
+        btnMatrix.className = 'px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold bg-indigo-600 text-white transition flex items-center gap-1.5';
+        btnReport.className = 'px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5';
+        renderAll();
+      }
+    }
+
+    function renderReportView() {
+      const profile = getCurrentProfile();
+      const overall = calculateOverallStats(profile);
+
+      document.getElementById('reportHeaderTeacher').textContent =
+        profile.teacherName || 'Student / Teacher Evaluation Report';
+      document.getElementById('reportHeaderSub').textContent =
+        `Observer: ${profile.observerName || '—'}  •  Date: ${profile.date || '—'}  •  Classroom: ${profile.classroom || '—'}`;
+
+      document.getElementById('reportOverallScore').textContent =
+        overall.overallAverage !== null ? `${overall.overallAverage.toFixed(2)} / 7.0` : '—';
+      document.getElementById('reportOverallBand').textContent =
+        overall.overallBand;
+
+      // Render 10 Broad Areas Overview Cards
+      const gridEl = document.getElementById('reportTenAreasGrid');
+      gridEl.innerHTML = rubricAreas.map((area, idx) => {
+        const st = calculateAreaStats(profile, area);
+        let cardColor = 'bg-slate-50 border-slate-200 text-slate-500';
+        if (st.average !== null) {
+          if (st.band === 'Low') cardColor = 'bg-rose-50 border-rose-200 text-rose-900';
+          else if (st.band === 'Mid') cardColor = 'bg-amber-50 border-amber-200 text-amber-900';
+          else cardColor = 'bg-emerald-50 border-emerald-200 text-emerald-900';
+        }
+        return `
+          <div onclick="setMainView('matrix'); selectBroadArea(${idx});"
+            class="cursor-pointer rounded-xl border p-3 transition hover:shadow-xs ${cardColor}">
+            <div class="text-[11px] font-bold uppercase opacity-75">${area.number}. ${escapeHtml(area.domain)}</div>
+            <div class="text-xs font-extrabold truncate mt-0.5">${escapeHtml(area.title)}</div>
+            <div class="mt-2 flex items-baseline justify-between">
+              <span class="text-lg font-black">${st.average !== null ? st.average.toFixed(1) : '—'}</span>
+              <span class="text-[11px] font-semibold">${st.band ? st.band : 'Unrated'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render Detailed Rated Broad Areas
+      const detailedContainer = document.getElementById('reportDetailedAreasContainer');
+      const ratedAreasHtml = rubricAreas.map(area => {
+        const st = calculateAreaStats(profile, area);
+        const areaObj = profile.ratings[area.id];
+        const hasNotes = areaObj && (areaObj.observerNotes || areaObj.studentGoal);
+
+        if (st.ratedCount === 0 && !hasNotes) return '';
+
+        const catRowsHtml = area.categories.map(cat => {
+          const r = areaObj && areaObj.categories ? areaObj.categories[cat.id] : null;
+          if (!r || !r.band) return '';
+
+          const bandTitle = r.band === 'low' ? 'Low (1,2)' : r.band === 'mid' ? 'Mid (3,4,5)' : 'High (6,7)';
+          const badgeClass = r.band === 'low'
+            ? 'bg-rose-100 text-rose-800 border-rose-300'
+            : r.band === 'mid'
+            ? 'bg-amber-100 text-amber-800 border-amber-300'
+            : 'bg-emerald-100 text-emerald-800 border-emerald-300';
+
+          return `
+            <div class="py-3 border-b border-slate-100 last:border-b-0 grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+              <div class="md:col-span-4">
+                <div class="font-bold text-sm text-slate-900">${escapeHtml(cat.name)}</div>
+                <ul class="list-disc pl-4 text-xs text-slate-600 mt-0.5 space-y-0.5">
+                  ${cat.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="md:col-span-3">
+                <span class="inline-block text-xs font-bold px-2.5 py-1 rounded-md border ${badgeClass}">
+                  ${bandTitle} • Score: ${r.score}
+                </span>
+              </div>
+              <div class="md:col-span-5 text-sm text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200 italic">
+                "${escapeHtml(cat[r.band])}"
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="rounded-xl border border-slate-300 overflow-hidden print-break-inside-avoid">
+            <div class="bg-slate-100 px-4 py-3 border-b border-slate-300 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="text-xs font-bold uppercase text-slate-500">${area.number}. ${escapeHtml(area.domain)}</span>
+                <h4 class="text-base font-extrabold text-slate-900">${escapeHtml(area.title)}</h4>
+              </div>
+              <div class="text-sm font-bold text-slate-800">
+                Area Mean: ${st.average !== null ? `${st.average.toFixed(2)} (${st.band})` : 'Not Scored'}
+              </div>
+            </div>
+            <div class="p-4 space-y-3">
+              ${catRowsHtml || '<p class="text-xs text-slate-400 italic">No individual skill categories clicked yet.</p>'}
+
+              ${(areaObj && (areaObj.observerNotes || areaObj.studentGoal)) ? `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
+                  ${areaObj.observerNotes ? `
+                    <div class="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                      <div class="text-xs font-bold uppercase text-indigo-900 mb-1">Observer Feedback Notes</div>
+                      <p class="text-xs text-slate-800 whitespace-pre-line">${escapeHtml(areaObj.observerNotes)}</p>
+                    </div>
+                  ` : ''}
+                  ${areaObj.studentGoal ? `
+                    <div class="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
+                      <div class="text-xs font-bold uppercase text-emerald-900 mb-1">Student Goal / Reflection</div>
+                      <p class="text-xs text-slate-800 whitespace-pre-line">${escapeHtml(areaObj.studentGoal)}</p>
+                    </div>
+                  ` : ''}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).filter(Boolean).join('');
+
+      detailedContainer.innerHTML = ratedAreasHtml || `
+        <div class="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 text-sm">
+          No ratings or observer feedback recorded yet. Click on any Low, Mid, or High descriptor in the <strong>Scoring Matrix</strong> tab to populate this report!
+        </div>
+      `;
+
+      // Populate Goal Setting Worksheet Fields
+      const gw = profile.goalWorksheet || {};
+      document.getElementById('goalStrengthReflection').value = gw.strengthReflection || '';
+      document.getElementById('goalTeacherFeedback').value = gw.teacherFeedback || '';
+      document.getElementById('goalStrengthStatement').value = gw.strengthStatement || '';
+      document.getElementById('goalGrowthReflection').value = gw.growthReflection || '';
+      document.getElementById('goalGrowthStatement').value = gw.growthStatement || '';
+    }
+
+    function saveGoalWorksheet() {
+      const profile = getCurrentProfile();
+      profile.goalWorksheet = {
+        strengthReflection: document.getElementById('goalStrengthReflection').value,
+        teacherFeedback: document.getElementById('goalTeacherFeedback').value,
+        strengthStatement: document.getElementById('goalStrengthStatement').value,
+        growthReflection: document.getElementById('goalGrowthReflection').value,
+        growthStatement: document.getElementById('goalGrowthStatement').value
+      };
+      saveState();
+    }
+
+    function copyReportTextToClipboard() {
+      const profile = getCurrentProfile();
+      const overall = calculateOverallStats(profile);
+
+      let lines = [];
+      lines.push(`============================================================`);
+      lines.push(`TEACHER EFFECTIVENESS & CLASS OBSERVATION SUMMARY`);
+      lines.push(`============================================================`);
+      lines.push(`Student / Teacher: ${profile.teacherName || 'N/A'}`);
+      lines.push(`Observer:          ${profile.observerName || 'N/A'}`);
+      lines.push(`Date:              ${profile.date || 'N/A'}`);
+      lines.push(`Classroom:         ${profile.classroom || 'N/A'}`);
+      lines.push(`Overall Mean:      ${overall.overallAverage !== null ? overall.overallAverage.toFixed(2) + ' (' + overall.overallBand + ')' : 'Not Rated'}`);
+      lines.push(``);
+
+      rubricAreas.forEach(area => {
+        const st = calculateAreaStats(profile, area);
+        const areaObj = profile.ratings[area.id];
+        if (st.ratedCount > 0 || (areaObj && (areaObj.observerNotes || areaObj.studentGoal))) {
+          lines.push(`------------------------------------------------------------`);
+          lines.push(`${area.number}. ${area.title.toUpperCase()} (${area.domain}) — Mean: ${st.average !== null ? st.average.toFixed(2) + ' [' + st.band + ']' : 'Unrated'}`);
+          lines.push(`------------------------------------------------------------`);
+          area.categories.forEach(cat => {
+            const r = areaObj && areaObj.categories ? areaObj.categories[cat.id] : null;
+            if (r && r.band) {
+              const bandLabel = r.band === 'low' ? 'Low (1,2)' : r.band === 'mid' ? 'Mid (3,4,5)' : 'High (6,7)';
+              lines.push(`• ${cat.name}: ${bandLabel} [Score: ${r.score}]`);
+              lines.push(`  Descriptor: "${cat[r.band]}"`);
+            }
+          });
+          if (areaObj && areaObj.observerNotes) {
+            lines.push(`Observer Notes: ${areaObj.observerNotes}`);
+          }
+          if (areaObj && areaObj.studentGoal) {
+            lines.push(`Area Goal: ${areaObj.studentGoal}`);
+          }
+          lines.push(``);
+        }
+      });
+
+      const gw = profile.goalWorksheet || {};
+      lines.push(`============================================================`);
+      lines.push(`GOAL SETTING: ECE REFLECTIONS`);
+      lines.push(`============================================================`);
+      lines.push(`PART 1: BUILDING ON YOUR STRENGTHS`);
+      lines.push(`• My Strength (from my reflection): ${gw.strengthReflection || '[Write your answer here]'}`);
+      lines.push(`• My Teacher's Feedback (CLASS connection): ${gw.teacherFeedback || '[Write your answer here]'}`);
+      lines.push(`• My Strengths-Based Goal: ${gw.strengthStatement || '[Write your goal here]'}`);
+      lines.push(``);
+      lines.push(`PART 2: AREA FOR GROWTH`);
+      lines.push(`• What I want to do differently: ${gw.growthReflection || '[Write your answer here]'}`);
+      lines.push(`• My Growth Goal: ${gw.growthStatement || '[Write your goal here]'}`);
+
+      const tempInput = document.createElement('textarea');
+      tempInput.value = lines.join('\n');
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      showToast('Copied full evaluation & goal sheet to clipboard!');
+    }
+
+    /***********************************************************************
+     * 8. CUSTOMIZE RUBRIC MATRIX MODAL (FOR EDITING ALL 10 AREAS)
+     ***********************************************************************/
+    let editingCategoriesDraft = [];
+
+    function openRubricEditorModal() {
+      const area = rubricAreas[activeAreaIndex];
+      document.getElementById('editorModalAreaName').textContent = `${area.number}. ${area.title}`;
+      editingCategoriesDraft = JSON.parse(JSON.stringify(area.categories));
+
+      renderEditorModalRows();
+      const modal = document.getElementById('rubricEditorModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeRubricEditorModal() {
+      const modal = document.getElementById('rubricEditorModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderEditorModalRows() {
+      const container = document.getElementById('editorModalRowsContainer');
+      container.innerHTML = editingCategoriesDraft.map((cat, idx) => `
+        <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">
+              Category of Skill Row #${idx + 1}
+            </span>
+            <button onclick="removeEditorCategoryRow(${idx})" class="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-trash"></i> Remove Row
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Category of Skill Title</label>
+              <input type="text" value="${escapeHtml(cat.name)}" oninput="updateDraftCategory(${idx}, 'name', this.value)"
+                class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 font-semibold" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Bulleted Indicators (one per line)</label>
+              <textarea rows="2" oninput="updateDraftBullets(${idx}, this.value)"
+                class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300">${escapeHtml(cat.bullets.join('\n'))}</textarea>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-rose-700 mb-1">Low (1,2) Exact Text</label>
+              <textarea rows="3" oninput="updateDraftCategory(${idx}, 'low', this.value)"
+                class="w-full p-2 text-xs rounded-lg border border-rose-200 bg-white">${escapeHtml(cat.low)}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-700 mb-1">Mid (3,4,5) Exact Text</label>
+              <textarea rows="3" oninput="updateDraftCategory(${idx}, 'mid', this.value)"
+                class="w-full p-2 text-xs rounded-lg border border-amber-200 bg-white">${escapeHtml(cat.mid)}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-emerald-700 mb-1">High (6,7) Exact Text</label>
+              <textarea rows="3" oninput="updateDraftCategory(${idx}, 'high', this.value)"
+                class="w-full p-2 text-xs rounded-lg border border-emerald-200 bg-white">${escapeHtml(cat.high)}</textarea>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateDraftCategory(idx, field, val) {
+      editingCategoriesDraft[idx][field] = val;
+    }
+
+    function updateDraftBullets(idx, val) {
+      editingCategoriesDraft[idx].bullets = val
+        .split('\n')
+        .map(s => s.replace(/^[•\-*]\s*/, '').trim())
+        .filter(Boolean);
+    }
+
+    function addEditorCategoryRow() {
+      editingCategoriesDraft.push({
+        id: 'cat_' + Date.now(),
+        name: 'New Category of Skill',
+        bullets: ['Behavioral indicator 1', 'Behavioral indicator 2'],
+        low: 'Enter Low (1,2) rating description here.',
+        mid: 'Enter Mid (3,4,5) rating description here.',
+        high: 'Enter High (6,7) rating description here.'
+      });
+      renderEditorModalRows();
+    }
+
+    function removeEditorCategoryRow(idx) {
+      if (editingCategoriesDraft.length <= 1) {
+        showToast('Each broad area must have at least one category row.', 'amber');
+        return;
+      }
+      editingCategoriesDraft.splice(idx, 1);
+      renderEditorModalRows();
+    }
+
+    function restoreDefaultAreaRubric() {
+      const defaultArea = DEFAULT_RUBRIC_AREAS[activeAreaIndex];
+      editingCategoriesDraft = JSON.parse(JSON.stringify(defaultArea.categories));
+      renderEditorModalRows();
+      showToast(`Restored default rubric descriptors for ${defaultArea.title}`);
+    }
+
+    function saveCustomRubricChanges() {
+      rubricAreas[activeAreaIndex].categories = JSON.parse(JSON.stringify(editingCategoriesDraft));
+      rubricAreas[activeAreaIndex].isVerbatimUploaded = true;
+      saveState();
+      closeRubricEditorModal();
+      renderAll();
+      showToast(`Saved updated matrix text for ${rubricAreas[activeAreaIndex].title}!`);
+    }
+
+    /***********************************************************************
+     * 9. UTILITIES & INITIALIZATION
+     ***********************************************************************/
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function showToast(message, type = 'indigo') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const bgClass = type === 'amber' ? 'bg-amber-600' : 'bg-slate-900';
+      toast.className = `${bgClass} text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-white/10 flex items-center gap-2 transition-all duration-300`;
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2800);
+    }
+
+    window.onload = function () {
+      loadState();
+      renderAll();
+    };
+  </script>
+</body>
+</html>
